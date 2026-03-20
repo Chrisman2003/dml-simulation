@@ -169,13 +169,13 @@ def tune_once(dgp_func, learners, n, n_groups, beta_g, p_g, seed=0):
 # 6. Parallelized Hyperparameter Tuning
 # =====================================================
 # ---------------- Hyperparameter grids ----------------
-LASSO_GRID = {"alpha": np.logspace(-3, 0, 8)}
-EN_GRID = {"alpha": np.logspace(-3, 0, 8), "l1_ratio": [0.2, 0.5, 0.8]}
-RIDGE_GRID = {"alpha": np.logspace(-3, 3, 7)}  # 0.001 → 1000
-RF_GRID = {"max_depth": [3, 5, None], "min_samples_leaf": [5, 10, 20]}
-GB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3]}
-CATBOOST_GRID = {"learning_rate": [0.01, 0.05, 0.1], "depth": [3, 5, 7], "iterations": [100, 300]}
-XGB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3, 5], "n_estimators": [100, 300]}  # basic tuning
+LASSO_GRID = {"alpha": np.logspace(-4, 1, 20)}
+EN_GRID = {"alpha": np.logspace(-4, 1, 15), "l1_ratio": np.linspace(0.1, 0.9, 9)}
+RIDGE_GRID = {"alpha": np.logspace(-4, 4, 15)}  # 0.001 → 1000
+RF_GRID = {"max_depth": [3, 5, 10, None], "min_samples_leaf": [1, 5, 10, 20], "max_features": ['sqrt', 'log2', None]}
+GB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3, 5], "n_estimators": [100, 300, 500], "subsample": [0.5, 0.8, 1.0]} 
+CATBOOST_GRID = {"learning_rate": [0.01, 0.05, 0.1], "depth": [3, 5, 7], "iterations": [100, 300, 500]}
+XGB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3, 5, 7], "n_estimators": [100, 300, 500], "subsample": [0.5, 0.8, 1.0], "colsample_bytree": [0.5, 0.8, 1.0]}
 
 # ---------------- Single learner tuner ----------------
 def tune_learner(model, param_grid, X, y):
