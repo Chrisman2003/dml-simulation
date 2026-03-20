@@ -23,13 +23,11 @@ def aipw(Y, D, m0_hat, m1_hat, e_hat, tau_true):
         - (1 - D) * (Y - m0_hat) / (1 - e_hat)
         + m1_hat - m0_hat
     )
-
     tau_hat = psi.mean()
     var_hat = np.mean((psi - tau_hat) ** 2)
     se = np.sqrt(var_hat / len(Y))
-
     covered = (tau_hat - 1.96 * se <= tau_true <= tau_hat + 1.96 * se)
-
+    
     return tau_hat, se, covered, e_hat
 
 
@@ -110,9 +108,10 @@ def monte_carlo_parallel(dgp, learners, n, sims, n_groups, beta_g, p_g):
 # 4. Parallelized Hyperparameter Tuning
 # =====================================================
 # ---------------- Hyperparameter grids ----------------
+RIDGE_GRID = {"alpha": np.logspace(-4, 4, 15)}  # 0.001 → 1000
 LASSO_GRID = {"alpha": np.logspace(-4, 1, 20)}
 EN_GRID = {"alpha": np.logspace(-4, 1, 15), "l1_ratio": np.linspace(0.1, 0.9, 9)}
-RIDGE_GRID = {"alpha": np.logspace(-4, 4, 15)}  # 0.001 → 1000
+#LOGIT_LASSO_GRID = {"C": np.logspace(-3, 2, 25)}
 RF_GRID = {"max_depth": [3, 5, 10, None], "min_samples_leaf": [1, 5, 10, 20], "max_features": ['sqrt', 'log2', None]}
 GB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3, 5], "n_estimators": [100, 300, 500], "subsample": [0.5, 0.8, 1.0]} 
 CATBOOST_GRID = {"learning_rate": [0.01, 0.05, 0.1], "depth": [3, 5, 7], "iterations": [100, 300, 500]}
@@ -129,12 +128,14 @@ def tune_learner(model, param_grid, X, y):
 
 # ---------------- Handle each learner ----------------
 def tune_single(name, model, X, Y):
-    if name == "Lasso":
+    if name == "Ridge":
+        grid = RIDGE_GRID
+    elif name == "Lasso":
         grid = LASSO_GRID
     elif name == "ElasticNet":
         grid = EN_GRID
-    elif name == "Ridge":
-        grid = RIDGE_GRID
+#    elif name == "LogitLasso":
+#        grid = LOGIT_LASSO_GRID
     elif name == "RF":
         grid = RF_GRID
     elif name == "GB":
@@ -159,4 +160,3 @@ def tune_once_parallel(dgp_func, learners, n, n_groups, beta_g, p_g, seed=0):
     )
     tuned = dict(results)
     return tuned
-
