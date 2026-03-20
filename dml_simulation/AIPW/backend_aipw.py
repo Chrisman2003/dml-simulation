@@ -67,41 +67,7 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=2):
 
 
 # =====================================================
-# 3. Monte Carlo Simulation
-# =====================================================
-def monte_carlo(dgp, learners, n, sims, n_groups, beta_g, p_g):
-    rows = []
-    for s in range(sims):
-        rng = np.random.default_rng(s)
-        X, D, Y, tau_true = dgp(rng, n, n_groups, beta_g, p_g)
-        # print(f"Simulation {s+1}/{sims} - Design Matrix Rank: {np.linalg.matrix_rank(X)}") # Print rank of design matrix for debugging
-        # print(f"Matrix Shape: {X.shape}") # Print shape of design matrix for debugging
-        for name, learner in learners.items():
-            m0, m1, e = cross_fit_nuisances_fast(X, D, Y, learner)
-            tau, se, cov, e_hat = aipw(Y, D, m0, m1, e, tau_true)
-            rows.append({
-                "Learner": name,
-                "tau": tau,
-                "se": se,
-                "covered": cov,
-                "e_mean": e_hat.mean(),
-                "e_var": e_hat.var()
-            })
-    df = pd.DataFrame(rows)
-    
-    return df.groupby("Learner").agg(
-        Mean=("tau", "mean"),
-        Bias=("tau", lambda x: x.mean() - tau_true),
-        Variance=("tau", "var"),
-        Mean_SD_Err=("se", "mean"),
-        RMSE=("tau", lambda x: np.sqrt(np.mean((x - tau_true)**2))),
-        CIWidth=("se", lambda x: 2*1.96*np.mean(x)),
-        Coverage=("covered", "mean"),
-    )
-
-
-# =====================================================
-# 4. Parallelized Monte Carlo Simulation
+# 3. Parallelized Monte Carlo Simulation
 # =====================================================
 def run_single_sim(s, dgp, learners, n, n_groups, beta_g, p_g):
     rng = np.random.default_rng(s)
@@ -137,36 +103,11 @@ def monte_carlo_parallel(dgp, learners, n, sims, n_groups, beta_g, p_g):
         RMSE=("tau", lambda x: np.sqrt(np.mean((x - tau_true)**2))),
         CI_Width=("se", lambda x: 2 * 1.96 * np.mean(x)),
         Coverage=("covered", "mean"),
-    )
+    ).reindex(learners.keys())
     
 
 # =====================================================
-# 5. Hyperparameter Tuning
-# =====================================================
-def tune_once(dgp_func, learners, n, n_groups, beta_g, p_g, seed=0):
-    rng = np.random.default_rng(seed)
-    X, D, Y, _ = dgp_func(rng, n, n_groups, beta_g, p_g)
-    tuned = {}
-    for name, model in learners.items():
-        if name == "Lasso":
-            grid = LASSO_GRID
-        elif name == "ElasticNet":
-            grid = EN_GRID
-        elif name == "RF":
-            grid = RF_GRID
-        elif name == "GB":
-            grid = GB_GRID
-        elif name == "CatBoost":
-            grid = CATBOOST_GRID
-        else:
-            tuned[name] = clone(model)
-            continue
-        tuned[name] = tune_learner(clone(model), grid, X, Y)
-    return tuned
-
-
-# =====================================================
-# 6. Parallelized Hyperparameter Tuning
+# 4. Parallelized Hyperparameter Tuning
 # =====================================================
 # ---------------- Hyperparameter grids ----------------
 LASSO_GRID = {"alpha": np.logspace(-4, 1, 20)}
@@ -219,25 +160,3 @@ def tune_once_parallel(dgp_func, learners, n, n_groups, beta_g, p_g, seed=0):
     tuned = dict(results)
     return tuned
 
-
-# =====================================================
-# 7. DGP Design Helpers
-# =====================================================
-def make_group_design(n, rng, n_groups):
-    """
-    One-hot encoding of group instances.
-    Each observation belongs to exactly one group.
-    """
-    group_id = rng.integers(0, n_groups, size=n)
-    X = np.zeros((n, n_groups))
-    X[np.arange(n), group_id] = 1.0
-    return X, group_id
-
-def make_group_sparse_beta(n_groups, s_unique, rng):
-    """
-    s_unique = number of unique coefficient values
-    group sparsity = n_groups >> s_unique
-    """
-    unique_vals = rng.uniform(0.5, 1.5, size=s_unique)
-    beta = np.resize(unique_vals, n_groups)
-    return beta
