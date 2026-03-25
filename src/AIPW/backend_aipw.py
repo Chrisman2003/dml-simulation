@@ -34,7 +34,7 @@ def aipw(Y, D, m0_hat, m1_hat, e_hat, tau_true):
 # =====================================================
 # 2. Cross-Fitting Nuisance Estimation
 # =====================================================
-def cross_fit_nuisances_fast(X, D, Y, learner, K=2):
+def cross_fit_nuisances_fast(X, D, Y, learner, K=3):
     n = X.shape[0]
     m0_hat = np.zeros(n)
     m1_hat = np.zeros(n)
