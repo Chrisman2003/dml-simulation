@@ -60,8 +60,8 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=3):
         m1.fit(X_tr[D_tr == 1], Y_tr[D_tr == 1])
         m0.fit(X_tr[D_tr == 0], Y_tr[D_tr == 0])
 
-        m1_hat[test_idx] = m1.predict(X_te)
-        m0_hat[test_idx] = m0.predict(X_te)
+        m1_hat[test_idx] = m1.predict(X_te).ravel()
+        m0_hat[test_idx] = m0.predict(X_te).ravel()
 
     return m0_hat, m1_hat, e_hat
 
@@ -70,6 +70,7 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=3):
 # 3. Parallelized Monte Carlo Simulation
 # =====================================================
 def run_single_sim(s, dgp, learners, n, n_groups, beta_g, p_g):
+    print("Current Monte Carlo Simulation", s)
     rng = np.random.default_rng(s)
     X, D, Y, tau_true = dgp(rng, n, n_groups, beta_g, p_g)
     rows = []
@@ -120,13 +121,17 @@ XGB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3, 5, 7], "n_es
 KRR_GRID = {"alpha": np.logspace(-4, 2, 10), "gamma": np.logspace(-4, 2, 10)}
 SVR_GRID = {"C": np.logspace(-2, 3, 10), "gamma": np.logspace(-4, 1, 10), "epsilon": [0.01, 0.1, 0.5]}
 FUSED_GRID = {"alpha1": np.logspace(-3, 0, 4), "alpha2": np.logspace(-3, 1, 4)}  # Sparsity + Fusion jumps
-
+EXTRATREES_GRID = {"n_estimators": [100, 300, 500], "max_depth": [3, 5, 10, None], "min_samples_leaf": [1, 5, 10, 20], "max_features": ['sqrt', 'log2', None],"bootstrap": [True]}
+HONEST_FOREST_GRID = {"n_estimators": [100, 300], "max_depth": [5, 10, None], "min_samples_leaf": [5, 10, 20], "max_features": [0.3, 0.5, 'sqrt'], "min_impurity_decrease": [0.0, 1e-4]}
+#KNN_GRID = {"n_neighbors": [3, 5, 10, 20, 50], "weights": ['uniform', 'distance'], "metric": ['euclidean', 'manhattan', 'minkowski'], "p": [1, 2]}
+#PCR_GRID = {"pca__n_components": [2, 5, 10, 20]}
+NN_GRID = {"hidden_layer_sizes": [(64, 32), (100,)], "activation": ["relu", "tanh"], "alpha": [0.0001, 0.01, 1.0], "learning_rate_init": [0.001, 0.01], "max_iter": [500], "early_stopping": [True]}
 # ---------------- Single learner tuner ----------------
 def tune_learner(model, param_grid, X, y):
     if param_grid is None:
         model.fit(X, y)
         return model
-    gs = GridSearchCV(model, param_grid, cv=3, scoring="neg_mean_squared_error", n_jobs=1)
+    gs = GridSearchCV(model, param_grid, cv=2, scoring="neg_mean_squared_error", n_jobs=1)
     gs.fit(X, y)
     return gs.best_estimator_
 
@@ -152,6 +157,18 @@ def tune_single(name, model, X, Y):
         grid = SVR_GRID
     elif name == "FusedLasso":
         grid = FUSED_GRID
+    elif name == "ExtraTrees":
+        grid = EXTRATREES_GRID
+    elif name == "HonestForest":
+        grid = HONEST_FOREST_GRID
+    #elif name == "KNN":
+    #    grid = {f"knn__{k}": v for k, v in KNN_GRID.items()}
+    #elif name == "PCR":
+    #    n_features = X.shape[1]
+    #    components = [c for c in [2, 5, 10, 20] if c <= n_features]
+    #    grid = {"pca__n_components": components}
+    elif name == "NeuralNet":
+        grid = NN_GRID
     else:
         return name, clone(model)
     
