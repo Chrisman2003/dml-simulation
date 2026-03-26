@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import cvxpy as cp # New Library
 from joblib import Parallel, delayed
 from pathlib import Path
 from sklearn import clone
@@ -7,6 +8,7 @@ from sklearn.linear_model import Lasso, LogisticRegression
 from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from sklearn.base import BaseEstimator, RegressorMixin
 # =====================================================
 # Paths
 # =====================================================
@@ -117,6 +119,7 @@ CATBOOST_GRID = {"learning_rate": [0.01, 0.05, 0.1], "depth": [3, 5, 7], "iterat
 XGB_GRID = {"learning_rate": [0.01, 0.05, 0.1], "max_depth": [2, 3, 5, 7], "n_estimators": [100, 300, 500], "subsample": [0.5, 0.8, 1.0], "colsample_bytree": [0.5, 0.8, 1.0]}
 KRR_GRID = {"alpha": np.logspace(-4, 2, 10), "gamma": np.logspace(-4, 2, 10)}
 SVR_GRID = {"C": np.logspace(-2, 3, 10), "gamma": np.logspace(-4, 1, 10), "epsilon": [0.01, 0.1, 0.5]}
+FUSED_GRID = {"alpha1": np.logspace(-3, 0, 4), "alpha2": np.logspace(-3, 1, 4)}  # Sparsity + Fusion jumps
 
 # ---------------- Single learner tuner ----------------
 def tune_learner(model, param_grid, X, y):
@@ -147,7 +150,8 @@ def tune_single(name, model, X, Y):
         grid = KRR_GRID
     elif name == "SVR_RBF":
         grid = SVR_GRID
-    
+    elif name == "FusedLasso":
+        grid = FUSED_GRID
     else:
         return name, clone(model)
     
@@ -164,3 +168,50 @@ def tune_once_parallel(dgp_func, learners, n, n_groups, beta_g, p_g, seed=0):
     )
     tuned = dict(results)
     return tuned
+
+
+# =====================================================
+# 5. Configured Estimators
+# =====================================================
+class FusedLasso(BaseEstimator, RegressorMixin):
+    """
+    Custom Sklearn-compatible Fused Lasso using CVXPY.
+    """
+    def __init__(self, alpha1=1.0, alpha2=1.0):
+        self.alpha1 = alpha1  # Standard Lasso Penalty (Sparsity)
+        self.alpha2 = alpha2  # Total Variation Penalty (Fusion)
+        self.coef_ = None
+        self.intercept_ = None
+
+    def fit(self, X, y):
+        n, p = X.shape
+        
+        # Define CVXPY variables
+        beta = cp.Variable(p)
+        intercept = cp.Variable()
+        
+        # 1. Data Fidelity: (1 / 2n) * Sum of Squared Errors
+        rss = (1.0 / (2 * n)) * cp.sum_squares(y - X @ beta - intercept)
+        
+        # 2. Penalty Mechanisms
+        # alpha1 controls standard sparsity (forcing betas to 0)
+        l1_penalty = self.alpha1 * cp.norm1(beta)
+        
+        # alpha2 controls the "Fusion" (forcing adjacent betas to be equal)
+        fused_penalty = self.alpha2 * cp.norm1(cp.diff(beta))
+        
+        # Objective function
+        objective = cp.Minimize(rss + l1_penalty + fused_penalty)
+        problem = cp.Problem(objective)
+        
+        # Solve using ECOS or SCS (robust open-source solvers inside CVXPY)
+        problem.solve(solver=cp.SCS) 
+        
+        # Extract values
+        self.coef_ = beta.value
+        self.intercept_ = intercept.value
+        
+        return self
+
+    def predict(self, X):
+        return X @ self.coef_ + self.intercept_
