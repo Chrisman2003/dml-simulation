@@ -36,7 +36,7 @@ def aipw(Y, D, m0_hat, m1_hat, e_hat, tau_true):
 # =====================================================
 # 2. Cross-Fitting Nuisance Estimation
 # =====================================================
-def cross_fit_nuisances_fast(X, D, Y, learner, K=3):
+def cross_fit_nuisances_fast(X, D, Y, learner, K=5):
     n = X.shape[0]
     m0_hat = np.zeros(n)
     m1_hat = np.zeros(n)
@@ -70,7 +70,6 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=3):
 # 3. Parallelized Monte Carlo Simulation
 # =====================================================
 def run_single_sim(s, dgp, learners, n, n_groups, beta_g, p_g):
-    print("Current Monte Carlo Simulation", s)
     rng = np.random.default_rng(s)
     X, D, Y, tau_true = dgp(rng, n, n_groups, beta_g, p_g)
     rows = []
