@@ -136,13 +136,13 @@ HONEST_FOREST_GRID = {"n_estimators": [100, 300], "max_depth": [5, 10, None], "m
 #PCR_GRID = {"pca__n_components": [2, 5, 10, 20]}
 #NN_GRID = {"hidden_layer_sizes": [(10, ), (20, ), (10, 5)], "activation": ["relu", "tanh"], "alpha": np.logspace(-1, 3, 5), "learning_rate_init": [0.001, 0.01], "max_iter": [2000], "early_stopping": [False]}
 NN_GRID = {
-    "estimator__mlp__solver": ["lbfgs"],
-    "estimator__mlp__hidden_layer_sizes": [(10,), (20,), (10, 5)], 
-    "estimator__mlp__activation": ["relu", "tanh"], 
-    "estimator__mlp__alpha": np.logspace(-1, 3, 5), 
-    "estimator__mlp__learning_rate_init": [0.001, 0.01], 
-    "estimator__mlp__max_iter": [2000], 
-    "estimator__mlp__early_stopping": [False]
+    "mlp__solver": ["lbfgs"],
+    "mlp__hidden_layer_sizes": [(10,), (20,), (10, 5)], 
+    "mlp__activation": ["relu", "tanh"], 
+    "mlp__alpha": np.logspace(-1, 3, 5), 
+    "mlp__learning_rate_init": [0.001, 0.01], 
+    "mlp__max_iter": [2000], 
+    "mlp__early_stopping": [False]
 }
 # --> Early Stopping True Parameter catastrophic for small sample sizes
 
