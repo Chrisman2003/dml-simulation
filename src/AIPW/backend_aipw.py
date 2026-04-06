@@ -475,7 +475,6 @@ def plot_metrics_vs_x(df, x_col, title_suffix, output_dir, filename_prefix):
         fig, ax = plt.subplots(figsize=(10, 6))
         for learner in unique_learners:
             subset = df[df["Learner"] == learner].sort_values(x_col)
-
             ax.plot(
                 subset[x_col],
                 subset[metric],
@@ -485,6 +484,7 @@ def plot_metrics_vs_x(df, x_col, title_suffix, output_dir, filename_prefix):
             )
         if metric == "Coverage":
             ax.axhline(y=0.95, linestyle="--", color="red")
+        
         ax.set_title(f"{metric} vs {x_col} ({title_suffix})")
         ax.set_xlabel(x_col)
         ax.set_ylabel(metric)
@@ -495,9 +495,15 @@ def plot_metrics_vs_x(df, x_col, title_suffix, output_dir, filename_prefix):
         save_path = os.path.join(output_dir, metric)
         os.makedirs(save_path, exist_ok=True)
         fig.savefig(
-            os.path.join(save_path, f"{filename_prefix}_{metric}_{x_col}.png"),
+            os.path.join(save_path, f"{filename_prefix}.png"),#_{metric}_{x_col}.png"),
             dpi=500,
             bbox_inches="tight",
         )
-
     return figures
+
+def save_results_table(df, output_dir, filename_prefix):
+    os.makedirs(output_dir, exist_ok=True)
+    df = df.round(4)
+    df.to_csv(os.path.join(output_dir, f"{filename_prefix}.csv")) # Save Raw CSV
+    
+    return df
