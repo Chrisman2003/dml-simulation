@@ -52,8 +52,8 @@ To ensure orthogonality and avoid overfitting bias:
 
 ### Linear Models
 - OLS
-- Ridge Regression
 - Lasso
+- Ridge Regression
 - Elastic Net
 - Fused Lasso (CVXPY structured sparsity)
 
@@ -95,7 +95,7 @@ $$
 $$
 Y_i(0) = \mu_{g(i)} + \varepsilon_i
 \quad , \quad
-Y_i(1) = \mu_{g(i)} + \tau + \varepsilon_i
+Y_i(1) = \mu_{g(i)} + \theta + \varepsilon_i
 $$
 
 ### Treatment assignment:
@@ -106,8 +106,8 @@ $$
 
 where:
 
-- \( \mu_g \): group-level baseline effects  
-- \( p_g \): group-level propensity (confounded via latent factor)
+- $\mu_g$: group-level baseline effects  
+- $p_g$: group-level propensity (confounded via latent factor)
 
 ---
 
