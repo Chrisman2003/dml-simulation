@@ -26,26 +26,20 @@ We investigate how nuisance estimation impacts causal inference in high-dimensio
 
 The main estimator is the **Augmented Inverse Probability Weighting (AIPW)** estimator:
 
-$$\psi_i = \frac{D_i (Y_i - m_1(X_i))}{e(X_i)} - \frac{(1 - D_i)(Y_i - m_0(X_i))}{1 - e(X_i)}+ m_1(X_i) - m_0(X_i)$$
+$$\psi_i = = \frac{D_i (Y_i - m_1(X_i))}{e(X_i)} - \frac{(1 - D_i)(Y_i - m_0(X_i))}{1 - e(X_i)}+ m_1(X_i) - m_0(X_i)$$
 
 The treatment effect estimator is:
 
-\[
-\hat{\tau} = \frac{1}{n} \sum_{i=1}^{n} \psi_i
-\]
+$$
+\hat{\theta}_{\text{AIPW}} = \frac{1}{n} \sum_{i=1}^{n} \psi_i
+$$
 
-Variance estimate:
-
-\[
-\widehat{\mathrm{Var}}(\hat{\tau}) = \frac{1}{n} \mathrm{Var}(\psi_i)
-\]
 
 Confidence interval:
 
-\[
-\hat{\tau} \pm 1.96 \cdot \hat{\mathrm{SE}}
-\]
-
+$$
+CI = \hat{\theta}_{\text{AIPW}} \pm 1.96 \cdot \widehat{\mathrm{SE}}(\hat{\theta}_{\text{AIPW}})
+$$
 ---
 
 ## 2. Cross-Fitting Procedure
@@ -58,46 +52,7 @@ To ensure orthogonality and avoid overfitting bias:
   - Propensity model: \( e(X) \)
 
 ---
-
-## 3. Monte Carlo Simulation Framework
-
-We evaluate estimator performance via parallel Monte Carlo:
-
-Metrics computed:
-
-- Bias:
-\[
-\mathbb{E}[\hat{\tau}] - \tau
-\]
-
-- Variance:
-\[
-\frac{1}{n_{\text{sim}}-1} \sum_{k=1}^{n_{\text{sim}}} \left(\hat{\tau}_k - \frac{1}{n_{\text{sim}}} \sum_{j=1}^{n_{\text{sim}}} \hat{\tau}_j\right)^2
-\]
-
-- Avg. CI width:
-\[
-\frac{1}{n_{\text{sim}}} \sum_{k=1}^{n_{\text{sim}}} \left( \hat{\tau}_k^{\text{upper}} - \hat{\tau}_k^{\text{lower}} \right)
-\]
-
-- Coverage:
-\[
-\mathbb{P}(\tau \in CI_{95\%})
-\]
-
-- RMSE:
-\[
-\sqrt{\mathbb{E}[(\hat{\tau} - \tau)^2]}
-\]
-
-- Mean:
-\[
-\frac{1}{n_{\text{sim}}} \sum_{k=1}^{n_{\text{sim}}} \hat{\tau}_k
-\]
-
----
-
-## 4. Machine Learning Models
+## 3. Machine Learning Models
 
 ### Linear Models
 - OLS
@@ -125,33 +80,33 @@ Metrics computed:
 
 ---
 
-## 5. High-Dimensional Discrete DGP
+## 4. High-Dimensional Discrete DGP
 
 Covariates are group-structured:
 
-\[
+$$
 X \in \{0,1\}^{n \times G}
-\]
+$$
 
 Each observation belongs to exactly one group.
 
 ### Outcome model:
 
-\[
+$$
 Y_i = D_i Y_i(1) + (1 - D_i) Y_i(0)
-\]
+$$
 
-\[
+$$
 Y_i(0) = \mu_{g(i)} + \varepsilon_i
 \quad , \quad
 Y_i(1) = \mu_{g(i)} + \tau + \varepsilon_i
-\]
+$$
 
 ### Treatment assignment:
 
-\[
+$$
 D_i \sim \mathrm{Bernoulli}(p_{g(i)})
-\]
+$$
 
 where:
 
@@ -160,7 +115,7 @@ where:
 
 ---
 
-## 6. Latent Confounding Structure
+## 5. Latent Confounding Structure
 Group-level parameters are generated as:
 
 $$
