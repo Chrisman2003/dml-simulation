@@ -24,18 +24,12 @@ We investigate how nuisance estimation impacts causal inference in high-dimensio
 
 ## 1. AIPW Estimator
 
-The main estimator is the **Augmented Inverse Probability Weighting (AIPW)** estimator:
+The **Augmented Inverse Probability Weighting (AIPW)** is defined as:
 
 $$
 \hat{\theta}_{\text{AIPW}} = \frac{1}{n} \sum_{i=1}^{n}\left[\frac{D_i (Y_i - m_1(X_i))}{e(X_i)} - \frac{(1 - D_i)(Y_i - m_0(X_i))}{1 - e(X_i)}+ m_1(X_i) - m_0(X_i)\right]
 $$
 
-
-With Confidence interval:
-
-$$
-CI = \hat{\theta}_{\text{AIPW}} \pm 1.96 \cdot \widehat{\mathrm{SE}}\big(\hat{\theta}_{\text{AIPW}}\big)
-$$
 ---
 
 ## 2. Cross-Fitting Procedure
@@ -44,8 +38,8 @@ To ensure orthogonality and avoid overfitting bias:
 
 - K-fold sample splitting
 - Separate training of nuisance models:
-  - Outcome models: \( m_0(X), m_1(X) \)
-  - Propensity model: \( e(X) \)
+  - Outcome models: $m_0(X), m_1(X)$
+  - Propensity model: $e(X)$
 
 ---
 ## 3. Machine Learning Models
@@ -128,6 +122,6 @@ $$
 p_g = \sigma(\rho_g)
 $$
 
-where \( \sigma(\cdot) \) denotes the logistic function.
+where $\sigma(\cdot)$ denotes the logistic function.
 
 This induces **strong correlation between treatment and outcome mechanisms**.
