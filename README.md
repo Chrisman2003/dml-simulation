@@ -1,8 +1,8 @@
 # Debiased Machine Learning in High-Dimensional Discrete Settings
 
-This project studies **Double / Debiased Machine Learning (DML)** in high-dimensional settings with **discrete and grouped covariates**, focusing on how nuisance function estimators behave under varying sparsity, dimensionality, and confounding structures.
+This project studies **Double / Debiased Machine Learning (DML)** in high-dimensional settings with **discrete and grouped covariates**, focusing on how nuisance function estimators behave under varying sparsity, dimensionality, sample size, and confounding structures.
 
-We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)** estimator with **cross-fitted machine learning nuisance models**, and systematically compare a wide range of Machine Learners in simulated causal inference environments.
+We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)** estimator with **cross-fitted machine learning nuisance models**, and systematically compare its performance under these machine learners with synthetic data-generating processes.
 
 ## Configuration
 - Run in Terminal the command "pip install -e ."
