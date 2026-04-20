@@ -2,10 +2,11 @@
 
 This project studies **Double / Debiased Machine Learning (DML)** in high-dimensional settings with **discrete and grouped covariates**, focusing on how nuisance function estimators behave under varying sparsity, dimensionality, and confounding structures.
 
-We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)** estimator with **cross-fitted machine learning nuisance models**, and systematically compare a wide range of estimators in simulated causal inference environments.
+We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)** estimator with **cross-fitted machine learning nuisance models**, and systematically compare a wide range of Machine Learners in simulated causal inference environments.
 
 ## Configuration
 - Run in Terminal the command "pip install -e ."
+- Generalizing group structure: frontends, backends, (middleend for code serving as a conceptual bridge)
 - To run the core pipeline: enter "src/AIPW"
 
 ---
