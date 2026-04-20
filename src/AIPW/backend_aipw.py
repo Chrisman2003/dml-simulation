@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
-import cvxpy as cp # New Library
+import cvxpy as cp
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from joblib import Parallel, delayed
@@ -15,11 +15,6 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from scipy.linalg import lstsq
 from sklearn.base import BaseEstimator, RegressorMixin
 # =====================================================
-# Paths
-# =====================================================
-FIGURES_DIR = Path("figures")
-FIGURES_DIR.mkdir(exist_ok=True)
-# =====================================================
 # 1. AIPW Estimator
 # =====================================================
 def aipw(Y, D, m0_hat, m1_hat, e_hat, tau_true):
@@ -28,10 +23,10 @@ def aipw(Y, D, m0_hat, m1_hat, e_hat, tau_true):
         - (1 - D) * (Y - m0_hat) / (1 - e_hat)
         + m1_hat - m0_hat
     )
-    tau_hat = psi.mean()
+    tau_hat = psi.mean() # AIPW Estimate
     var_hat = np.mean((psi - tau_hat) ** 2)
-    se = np.sqrt(var_hat / len(Y))
-    covered = (tau_hat - 1.96 * se <= tau_true <= tau_hat + 1.96 * se)
+    se = np.sqrt(var_hat / len(Y)) 
+    covered = (tau_hat - 1.96 * se <= tau_true <= tau_hat + 1.96 * se) # True if 95% CI covers the true tau
     
     return tau_hat, se, covered, e_hat
 
@@ -44,19 +39,13 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=5):
     m0_hat = np.zeros(n)
     m1_hat = np.zeros(n)
     e_hat = np.zeros(n)
-    prop_model = LogisticRegression(max_iter=1000)
+    prop_model = LogisticRegression(max_iter=1000) # Regularized Logistic Regression for Propensity Score Estimation
     kf = KFold(n_splits=K, shuffle=True, random_state=123)
 
     for train_idx, test_idx in kf.split(X):
         X_tr, X_te = X[train_idx], X[test_idx]
-        D_tr = D[train_idx]
+        D_tr = D[train_idx] # 
         Y_tr = Y[train_idx]
-        
-        ## DEBUG CHECK
-        #print(f"Fold {len(train_idx)}: Treated={D_tr.sum()}, Untreated={len(D_tr) - D_tr.sum()}") # Print sample size of Treated and Untreated
-        #X_sub = X_tr[D_tr == 1]
-        #active_cols = np.sum(X_sub, axis=0) > 0
-        #print("Active features:", active_cols.sum(), "out of", X_sub.shape[1])
 
         # Propensity model
         prop = clone(prop_model)
@@ -79,7 +68,6 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=5):
 # 3. Parallelized Monte Carlo Simulation
 # =====================================================
 def run_single_sim(s, dgp, learners, n, n_groups, beta_g, p_g):
-    #print("Current Simulation", s)
     rng = np.random.default_rng(s)
     X, D, Y, tau_true = dgp(rng, n, n_groups, beta_g, p_g)
     rows = []
@@ -111,7 +99,7 @@ def monte_carlo_parallel(dgp, learners, n, sims, n_groups, beta_g, p_g):
         Variance=("tau", "var"),
         Mean_SD_Err=("se", "mean"),
         RMSE=("tau", lambda x: np.sqrt(np.mean((x - tau_true)**2))),
-        CI_Width=("se", lambda x: 2 * 1.96 * np.mean(x)),
+        CI_Width=("se", lambda x: 2 * 1.96 * np.mean(x)), # 95% CI width
         Coverage=("covered", "mean"),
     ).reindex(learners.keys())
     
@@ -132,9 +120,6 @@ SVR_GRID = {"C": np.logspace(-2, 3, 10), "gamma": np.logspace(-4, 1, 10), "epsil
 FUSED_GRID = {"alpha1": np.logspace(-3, 0, 4), "alpha2": np.logspace(-3, 1, 4)}  # Sparsity + Fusion jumps
 EXTRATREES_GRID = {"n_estimators": [100, 300, 500], "max_depth": [3, 5, 10, None], "min_samples_leaf": [1, 5, 10, 20], "max_features": ['sqrt', 'log2', None],"bootstrap": [True]}
 HONEST_FOREST_GRID = {"n_estimators": [100, 300], "max_depth": [5, 10, None], "min_samples_leaf": [5, 10, 20], "max_features": [0.3, 0.5, 'sqrt'], "min_impurity_decrease": [0.0, 1e-4]}
-#KNN_GRID = {"n_neighbors": [3, 5, 10, 20, 50], "weights": ['uniform', 'distance'], "metric": ['euclidean', 'manhattan', 'minkowski'], "p": [1, 2]}
-#PCR_GRID = {"pca__n_components": [2, 5, 10, 20]}
-#NN_GRID = {"hidden_layer_sizes": [(10, ), (20, ), (10, 5)], "activation": ["relu", "tanh"], "alpha": np.logspace(-1, 3, 5), "learning_rate_init": [0.001, 0.01], "max_iter": [2000], "early_stopping": [False]}
 NN_GRID = {
     "mlp__solver": ["lbfgs"],
     "mlp__hidden_layer_sizes": [(10,), (20,), (10, 5)], 
@@ -142,9 +127,8 @@ NN_GRID = {
     "mlp__alpha": np.logspace(-1, 3, 5), 
     "mlp__learning_rate_init": [0.001, 0.01], 
     "mlp__max_iter": [2000], 
-    "mlp__early_stopping": [False]
+    "mlp__early_stopping": [False] # Catastrophic for small sample sizes when True
 }
-# --> Early Stopping True Parameter catastrophic for small sample sizes
 
 # ---------------- Single learner tuner ----------------
 def tune_learner(model, param_grid, X, y):
@@ -181,12 +165,6 @@ def tune_single(name, model, X, Y):
         grid = EXTRATREES_GRID
     elif name == "HonestForest":
         grid = HONEST_FOREST_GRID
-    #elif name == "KNN":
-    #    grid = {f"knn__{k}": v for k, v in KNN_GRID.items()}
-    #elif name == "PCR":
-    #    n_features = X.shape[1]
-    #    components = [c for c in [2, 5, 10, 20] if c <= n_features]
-    #    grid = {"pca__n_components": components}
     elif name == "NeuralNet":
         grid = NN_GRID
     else:
@@ -284,7 +262,7 @@ class NumpyOLS(BaseEstimator, RegressorMixin):
         X_ = np.column_stack([np.ones(X.shape[0]), X])
         return X_ @ self.beta_
     
-    
+
 class ScipyOLS(BaseEstimator, RegressorMixin):
     def __init__(self):
         pass
@@ -299,46 +277,6 @@ class ScipyOLS(BaseEstimator, RegressorMixin):
         return X_ @ self.beta_
     
     
-class Optimized_CVX_OLS(BaseEstimator, RegressorMixin):
-    """
-    OLS Estimator that avoids Moore-Penrose pseudo-inverse.
-    Solves the objective function: min ||y - Xb||^2 via convex optimization.
-    Uses CVX
-    """
-    def __init__(self, fit_intercept=True):
-        self.fit_intercept = fit_intercept
-        self.coef_ = None
-        self.intercept_ = None
-
-    def fit(self, X, y):
-        n, p = X.shape
-        
-        # Define variables
-        beta = cp.Variable(p)
-        intercept = cp.Variable() if self.fit_intercept else 0
-        
-        # Objective: Minimize Sum of Squared Residuals (SSR)
-        # cp.sum_squares is equivalent to ||y - (Xb + c)||^2
-        objective = cp.Minimize(cp.sum_squares(y - X @ beta - intercept))
-        
-        # Define and solve problem
-        # We use SCS or ECOS; these don't rely on the Moore-Penrose matrix
-        prob = cp.Problem(objective)
-        prob.solve(solver=cp.SCS) 
-        
-        # Extract results
-        self.coef_ = beta.value
-        if self.fit_intercept:
-            self.intercept_ = intercept.value
-        else:
-            self.intercept_ = 0.0
-            
-        return self
-
-    def predict(self, X):
-        return X @ self.coef_ + self.intercept_
-    
-    
 class StrictNormalOLS(BaseEstimator, RegressorMixin):
     """
     A 'Textbook' OLS using the Normal Equation.
@@ -350,17 +288,21 @@ class StrictNormalOLS(BaseEstimator, RegressorMixin):
         self.intercept_ = None
         
     def fit(self, X, y):
+        # 1. Identify non-zero columns
         nonzero_cols = np.any(X != 0, axis=0)
-        X_reduced = X[:, nonzero_cols]
+        X_reduced = X[:, nonzero_cols] # Only keep columns that have data
+        # 2. Add intercept if requested
         if self.fit_intercept:
             X_full = np.column_stack([np.ones(X_reduced.shape[0]), X_reduced])
         else:
             X_full = X_reduced
 
+        # 3. Compute (X'X) and its inverse for the reduced matrix
         xtx = X_full.T @ X_full
-        xtx_inv = np.linalg.inv(xtx)
-        beta_full = xtx_inv @ (X_full.T @ y)
+        xtx_inv = np.linalg.inv(xtx) # Apply inverse not pseudo-inverse
+        beta_full = xtx_inv @ (X_full.T @ y) # Matrix multiplication
         self.nonzero_cols_ = nonzero_cols
+        # 4. Store results, assigning 0 to any columns that were dropped
         if self.fit_intercept:
             self.intercept_ = beta_full[0]
             self.coef_ = beta_full[1:]
@@ -373,39 +315,6 @@ class StrictNormalOLS(BaseEstimator, RegressorMixin):
         X_reduced = X[:, self.nonzero_cols_]
         return X_reduced @ self.coef_ + self.intercept_
 
-    #def fit(self, X, y):
-    #    # 1. Add constant for intercept
-    #    if self.fit_intercept:
-    #        X_full = np.column_stack([np.ones(X.shape[0]), X])
-    #    else:
-    #        X_full = X
-    #    
-    #    # 2. Compute (X'X)
-    #    xtx = X_full.T @ X_full
-    #    
-    #    # 3. Try to invert (X'X) - This is where it fails if p > n
-    #    # We use np.linalg.inv instead of pinv (pseudo-inverse)
-    #    try:
-    #        xtx_inv = np.linalg.inv(xtx) # Function: np.linalg.pinv() computes (Moore-Penrose) pseudo-inverse of Matrix
-    #    except np.linalg.LinAlgError:
-    #        raise ValueError("OLS Failed: Matrix is singular (p > n or perfect multicollinearity).")
-    #        
-    #    # 4. Solve for beta: beta = (X'X)^-1 X'y
-    #    beta_full = xtx_inv @ (X_full.T @ y)
-    #    
-    #    if self.fit_intercept:
-    #        self.intercept_ = beta_full[0]
-    #        self.coef_ = beta_full[1:]
-    #    else:
-    #        self.intercept_ = 0.0
-    #        self.coef_ = beta_full
-    #        
-    #    return self
-
-    #def predict(self, X):
-    #    return X @ self.coef_ + self.intercept_
-    
-# CHAT-GPT Fix
 class SafeNormalOLS(BaseEstimator, RegressorMixin):
     """
     Computes OLS using the Normal Equation but dynamically detects and drops 
@@ -435,7 +344,7 @@ class SafeNormalOLS(BaseEstimator, RegressorMixin):
         xtx = X_active.T @ X_active
         
         try:
-            xtx_inv = np.linalg.inv(xtx)
+            xtx_inv = np.linalg.inv(xtx) # Apply inverse not pseudo-inverse
         except np.linalg.LinAlgError:
             raise ValueError("OLS Failed: Dummy Variable Trap or Perfect Multicollinearity detected.")
             
@@ -495,7 +404,7 @@ def plot_metrics_vs_x(df, x_col, title_suffix, output_dir, filename_prefix):
         save_path = os.path.join(output_dir, metric)
         os.makedirs(save_path, exist_ok=True)
         fig.savefig(
-            os.path.join(save_path, f"{filename_prefix}.png"),#_{metric}_{x_col}.png"),
+            os.path.join(save_path, f"{filename_prefix}.png"),
             dpi=500,
             bbox_inches="tight",
         )

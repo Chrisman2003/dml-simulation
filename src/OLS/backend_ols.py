@@ -1,0 +1,119 @@
+import numpy as np
+from scipy.stats import norm
+import matplotlib.pyplot as plt
+from pathlib import Path
+# =====================================================
+# Paths
+# =====================================================
+BASE_DIR = Path(__file__).resolve().parent
+FIGURES_DIR = BASE_DIR / "figures"
+FIGURES_DIR.mkdir(exist_ok=True)
+# =====================================================
+# 1. Data-generating processes
+# =====================================================
+def sample_normal(mu, sigma, n, rng):
+    return rng.normal(loc=mu, scale=sigma, size=n) # scale is std dev
+
+def sample_mean(x):
+    return np.mean(x)
+
+def sample_variance(x):
+    return np.var(x, ddof=1)
+
+# =====================================================
+# 2. Confidence interval
+# =====================================================
+def mean_ci(x, alpha):
+    n = len(x)
+    mean = sample_mean(x)
+    std_error = np.std(x, ddof=1) / np.sqrt(n)
+    z = norm.ppf(1 - alpha / 2)
+    lower = mean - z * std_error
+    upper = mean + z * std_error
+    return lower, upper
+
+# =====================================================
+# 3. Single simulation run
+# =====================================================
+def run_once(n, mu, sigma, alpha, rng):
+    x = sample_normal(mu, sigma, n, rng)
+    mean = sample_mean(x)
+    var = sample_variance(x)
+    ci_lower, ci_upper = mean_ci(x, alpha)
+    covered = (ci_lower <= mu) and (mu <= ci_upper)
+
+    return {
+        "mean": mean,
+        "variance": var,
+        "ci_lower": ci_lower,
+        "ci_upper": ci_upper,
+        "covered": covered
+    }
+
+# =====================================================
+# 4. Monte Carlo simulations
+# =====================================================
+def monte_carlo(n, mu, sigma, alpha, n_rep, seed=42):
+    rng = np.random.default_rng(seed)
+    results = []
+    for _ in range(n_rep):
+        output = run_once(n, mu, sigma, alpha, rng)
+        results.append(output)
+    return results
+
+# =====================================================
+# 5. Diagnostics
+# =====================================================
+def summarize_results(results, mu):
+    means = np.array([r["mean"] for r in results])
+    coverage = np.mean([r["covered"] for r in results])
+
+    return {
+        "mean_of_means": means.mean(),
+        "bias": means.mean() - mu,
+        "variance": means.var(),
+        "coverage": coverage
+    }
+
+# =====================================================
+# 6. Plots
+# =====================================================
+def plot_sampling_distribution(results, mu, save=True):
+    means = [r["mean"] for r in results]    
+    plt.figure(figsize=(8, 5))
+    plt.hist(means, bins=30, density=True, alpha=0.7)
+    plt.axvline(mu, color="red", linestyle="--", label="True mean")
+    plt.title("Sampling Distribution of Sample Mean")
+    plt.xlabel("Sample mean")
+    plt.legend()
+    plt.savefig(FIGURES_DIR / "sampling_distribution.png", dpi=500)
+
+def plot_confidence_intervals(results, mu, max_plots=100, save=True):
+    plt.figure(figsize=(8, 5))
+    
+    for i, r in enumerate(results[:max_plots]):
+        plt.plot([i, i], [r["ci_lower"], r["ci_upper"]], color="gray")
+        plt.plot(i, r["mean"], "bo", markersize=3)
+    
+    plt.axhline(mu, color="red", linestyle="--", label="True mean")
+    plt.title("Confidence Intervals (First 100 Replications)")
+    plt.xlabel("Replication")
+    plt.ylabel("Value")
+    plt.legend()
+    plt.savefig(FIGURES_DIR / "confidence_intervals.png", dpi=500)
+
+def convergence_experiment(ns, mu, sigma, alpha, n_rep, save=True):
+    avg_means = []
+    for n in ns:
+        results = monte_carlo(n, mu, sigma, alpha, n_rep)
+        avg_means.append(np.mean([r["mean"] for r in results]))
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(ns, avg_means, marker="o")
+    plt.axhline(mu, color="red", linestyle="--", label="True mean")
+    plt.xscale("log")
+    plt.title("Convergence of Sample Mean (LLN)")
+    plt.xlabel("Sample size n (log scale)")
+    plt.ylabel("Average sample mean")
+    plt.legend()
+    plt.savefig(FIGURES_DIR / "convergence.png", dpi=500)
