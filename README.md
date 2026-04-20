@@ -13,7 +13,7 @@ We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)**
 
 # Research Objective
 
-We investigate how nuisance estimation impacts causal inference in high-dimensional discrete settings:
+We investigate how nuisance estimation impacts causal inference under the following conditions:
 
 - Moderate to High-dimensional regimes
 - Group-structured covariates (one-hot encoded)
@@ -32,14 +32,17 @@ $$
 
 ---
 
-## 2. Cross-Fitting Procedure
-
-To ensure orthogonality and avoid overfitting bias:
-
-- K-fold sample splitting
-- Separate training of nuisance models:
+## 2. Sample-Fitting Procedure
+- **Cross-Fitting (nuisance estimation):**
+  - K-fold sample splitting
   - Outcome models: $m_0(X), m_1(X)$
   - Propensity model: $e(X)$
+  - Relaxes the class of utilizable Machine Learners
+
+- **Cross-Validation (hyperparameter tuning):**
+  - Performed separately within training data
+  - GridSearchCV used to select optimal model parameters
+  - Applied across all learners before entering the DML pipeline
 
 ---
 ## 3. Machine Learning Models
@@ -95,13 +98,13 @@ $$
 ### Treatment assignment:
 
 $$
-D_i \sim \mathrm{Bernoulli}(p_{g(i)})
+D_i \sim \mathrm{Bernoulli}(\pi_{g(i)})
 $$
 
 where:
 
 - $\mu_g$: group-level baseline effects  
-- $p_g$: group-level propensity (confounded via latent factor)
+- $\pi_g$: group-level propensity (confounded via latent factor)
 
 ---
 
@@ -119,9 +122,10 @@ $$
 The propensity score is defined via a bounded transformation:
 
 $$
-p_g = \sigma(\rho_g)
+\pi_g = \sigma(\rho_g)
 $$
 
 where $\sigma(\cdot)$ denotes the logistic function.
+In the thesis notation (unlike the code implementation), the quantity $\pi_g$ is denoted as $\pi_g$ to maintain a consistent formal probabilistic notation for propensity scores throughout the text.
 
 This induces **strong correlation between treatment and outcome mechanisms**.
