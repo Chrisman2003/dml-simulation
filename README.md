@@ -26,19 +26,15 @@ We investigate how nuisance estimation impacts causal inference in high-dimensio
 
 The main estimator is the **Augmented Inverse Probability Weighting (AIPW)** estimator:
 
-$$\psi_i = = \frac{D_i (Y_i - m_1(X_i))}{e(X_i)} - \frac{(1 - D_i)(Y_i - m_0(X_i))}{1 - e(X_i)}+ m_1(X_i) - m_0(X_i)$$
-
-The treatment effect estimator is:
-
 $$
-\hat{\theta}_{\text{AIPW}} = \frac{1}{n} \sum_{i=1}^{n} \psi_i
+\hat{\theta}_{\text{AIPW}} = \frac{1}{n} \sum_{i=1}^{n}\left[\frac{D_i (Y_i - m_1(X_i))}{e(X_i)} - \frac{(1 - D_i)(Y_i - m_0(X_i))}{1 - e(X_i)}+ m_1(X_i) - m_0(X_i)\right]
 $$
 
 
-Confidence interval:
+With Confidence interval:
 
 $$
-CI = \hat{\theta}_{\text{AIPW}} \pm 1.96 \cdot \widehat{\mathrm{SE}}(\hat{\theta}_{\text{AIPW}})
+CI = \hat{\theta}_{\text{AIPW}} \pm 1.96 \cdot \widehat{\mathrm{SE}}\big(\hat{\theta}_{\text{AIPW}}\big)
 $$
 ---
 
