@@ -5,7 +5,8 @@ This project studies **Double / Debiased Machine Learning (DML)** in high-dimens
 We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)** estimator with **cross-fitted machine learning nuisance models**, and systematically compare a wide range of estimators in simulated causal inference environments.
 
 ## Configuration
-Run in Terminal the command "pip install -e ."
+- Run in Terminal the command "pip install -e ."
+- To run the core pipeline: enter "src/AIPW"
 
 ---
 
