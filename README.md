@@ -6,8 +6,11 @@ We implement and evaluate the **Augmented Inverse Probability Weighting (AIPW)**
 
 ## Configuration
 - Run in Terminal the command "pip install -e ."
-- Generalizing group structure: frontends, backends, (middleend for code serving as a conceptual bridge)
-- To run the core pipeline: enter "src/AIPW"
+
+## Structure
+- A generalized file structure: frontends, backends, (middleend for code serving as a conceptual bridge) is used
+- The core pipeline is under "src/AIPW"
+- In "src/AIPW/frontend_aipw.ipynb", the Machine Learners utilized for nuisance estimation are configurable in the set "learners_regime". A maximum of 26 Learners can be used for the simulation runs, with the configured colour palette in "backend_aipw.py"
 
 ---
 
