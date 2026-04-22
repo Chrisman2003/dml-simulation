@@ -44,7 +44,7 @@ def cross_fit_nuisances_fast(X, D, Y, learner, K=5):
 
     for train_idx, test_idx in kf.split(X):
         X_tr, X_te = X[train_idx], X[test_idx]
-        D_tr = D[train_idx] # 
+        D_tr = D[train_idx]
         Y_tr = Y[train_idx]
 
         # Propensity model
@@ -377,7 +377,7 @@ def plot_metrics_vs_x(df, x_col, title_suffix, output_dir, filename_prefix):
     
     # CONSISTENT COLOR MAP
     unique_learners = df["Learner"].unique()
-    colors = list(plt.cm.tab10.colors) + list(plt.cm.Dark2.colors)
+    colors = list(plt.cm.tab10.colors) + list(plt.cm.Dark2.colors) + list(plt.cm.Accent.colors)
     learner_color_map = dict(zip(unique_learners, colors))
 
     for metric in metrics:
